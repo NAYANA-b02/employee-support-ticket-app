@@ -5,10 +5,10 @@
     "description": "My laptop shows 0% even when plugged in. Tried different power outlets but charging LED remains off.",
     "category": "Hardware",
     "priority": "High",
-    "status": "In Progress",
+    "status": "Open",
     "createdBy": "Ravi",
     "createdDate": "18 Nov 2026, 09:30 AM",
-    "lastUpdatedDate": "18 Nov 2026, 04:42 PM",
+    "lastUpdatedDate": "18 Nov 2026, 09:30 AM",
     "comments": []
   },
   {
