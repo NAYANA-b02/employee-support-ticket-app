@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
       search: '',
       category: 'All',
       priority: 'All',
-      status: 'All'
+      status: 'All',
+      sort: 'newest'
     }
   };
 
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const categoryFilter = document.getElementById('categoryFilter');
   const priorityFilter = document.getElementById('priorityFilter');
   const statusFilter = document.getElementById('statusFilter');
+  const sortFilter = document.getElementById('sortFilter');
   const resetFiltersBtn = document.getElementById('resetFiltersBtn');
   const ticketCountLabel = document.getElementById('ticketCountLabel');
 
@@ -237,7 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
         search: state.filters.search,
         category: state.filters.category,
         priority: state.filters.priority,
-        status: state.filters.status
+        status: state.filters.status,
+        sort: state.filters.sort
       });
 
       const data = await apiFetch(`/api/tickets?${queryParams.toString()}`);
@@ -372,14 +375,20 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAndRenderTickets();
   });
 
+  sortFilter.addEventListener('change', (e) => {
+    state.filters.sort = e.target.value;
+    loadAndRenderTickets();
+  });
+
   resetFiltersBtn.addEventListener('click', () => {
     searchInput.value = '';
     categoryFilter.value = 'All';
     priorityFilter.value = 'All';
     statusFilter.value = 'All';
+    sortFilter.value = 'newest';
     clearSearchBtn.style.display = 'none';
 
-    state.filters = { search: '', category: 'All', priority: 'All', status: 'All' };
+    state.filters = { search: '', category: 'All', priority: 'All', status: 'All', sort: 'newest' };
     loadAndRenderTickets();
     showToast('Filters cleared', 'info');
   });

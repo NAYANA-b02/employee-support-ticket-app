@@ -165,4 +165,113 @@ test('Employee Support Ticket Application Tests', async (t) => {
     store.resetTickets();
     assert.strictEqual(store.getTickets({ role: 'Support Staff' }).length, 5);
   });
+
+  await t.test('9. Sorting by createdDate: Newest First and Oldest First', () => {
+    const newestIds = ['TICK-103', 'TICK-102', 'TICK-101', 'TICK-105', 'TICK-104'];
+    const oldestIds = ['TICK-104', 'TICK-105', 'TICK-101', 'TICK-102', 'TICK-103'];
+
+    const newest = store.getTickets({ role: 'Support Staff', sort: 'newest' });
+    assert.deepStrictEqual(newest.map(ticket => ticket.id), newestIds);
+
+    const oldest = store.getTickets({ role: 'Support Staff', sort: 'oldest' });
+    assert.deepStrictEqual(oldest.map(ticket => ticket.id), oldestIds);
+
+    const defaultOrder = store.getTickets({ role: 'Support Staff' });
+    assert.deepStrictEqual(defaultOrder.map(ticket => ticket.id), newestIds, 'Missing sort defaults to newest');
+
+    const sample = store.loadTickets()[0];
+    assert.ok(sample.createdDate);
+    assert.ok(Array.isArray(sample.comments));
+    assert.strictEqual(Object.prototype.hasOwnProperty.call(sample, 'assignedTo'), false);
+  });
+
+  await t.test('10. Sorting works together with search, category, priority, and status filters', () => {
+    const hardwareNewest = store.getTickets({
+      role: 'Support Staff',
+      category: 'Hardware',
+      sort: 'newest'
+    });
+    assert.deepStrictEqual(hardwareNewest.map(ticket => ticket.id), ['TICK-101', 'TICK-105']);
+
+    const hardwareOldest = store.getTickets({
+      role: 'Support Staff',
+      category: 'Hardware',
+      priority: 'High',
+      status: 'Open',
+      sort: 'oldest'
+    });
+    assert.deepStrictEqual(hardwareOldest.map(ticket => ticket.id), ['TICK-101']);
+
+    const priyaNewest = store.getTickets({
+      role: 'Support Staff',
+      search: 'Priya',
+      sort: 'newest'
+    });
+    assert.deepStrictEqual(priyaNewest.map(ticket => ticket.id), ['TICK-102', 'TICK-105']);
+
+    const priyaOldest = store.getTickets({
+      role: 'Support Staff',
+      search: 'Priya',
+      sort: 'oldest'
+    });
+    assert.deepStrictEqual(priyaOldest.map(ticket => ticket.id), ['TICK-105', 'TICK-102']);
+
+    const raviOpenOldest = store.getTickets({
+      user: 'Ravi',
+      role: 'Employee',
+      status: 'Open',
+      sort: 'oldest'
+    });
+    assert.deepStrictEqual(raviOpenOldest.map(ticket => ticket.id), ['TICK-101', 'TICK-103']);
+    assert.ok(raviOpenOldest.every(ticket => ticket.createdBy === 'Ravi' && ticket.status === 'Open'));
+  });
+
+  await t.test('11. Invalid sort values are rejected', () => {
+    assert.throws(
+      () => store.getTickets({ role: 'Support Staff', sort: 'alphabetical' }),
+      err => err.statusCode === 400 && err.message.includes('Sort must be one of')
+    );
+
+    assert.throws(
+      () => store.getTickets({ role: 'Support Staff', sort: 'Newest First' }),
+      err => err.statusCode === 400 && err.message.includes('Sort must be one of')
+    );
+
+    assert.throws(
+      () => store.getTickets({ role: 'Support Staff', category: 'Hardware', sort: 'date' }),
+      err => err.statusCode === 400
+    );
+  });
+
+  await t.test('12. Date parsing and invalid date handling in sorting', () => {
+    // Valid standard date format returns valid positive timestamp
+    const t1 = store.parseCreatedDate('18 Nov 2026, 09:30 AM');
+    assert.ok(t1 > 0, 'Valid date returns positive timestamp');
+
+    // Invalid, malformed, or missing date strings return 0 without throwing
+    assert.strictEqual(store.parseCreatedDate('invalid-date'), 0);
+    assert.strictEqual(store.parseCreatedDate(''), 0);
+    assert.strictEqual(store.parseCreatedDate(null), 0);
+    assert.strictEqual(store.parseCreatedDate(undefined), 0);
+    assert.strictEqual(store.parseCreatedDate('99 Nov 2026, 25:99 PM'), 0);
+
+    // ISO format fallback returns positive timestamp
+    const isoTime = store.parseCreatedDate('2026-11-18T09:30:00.000Z');
+    assert.ok(isoTime > 0, 'ISO date fallback parses successfully');
+
+    // Sorting continues to operate gracefully when tickets contain invalid dates
+    const testTickets = [
+      { id: 'TICK-A', title: 'Ticket with invalid date', category: 'Other', priority: 'Low', status: 'Open', createdBy: 'Ravi', createdDate: 'invalid-date' },
+      { id: 'TICK-B', title: 'Ticket with valid date', category: 'Other', priority: 'Low', status: 'Open', createdBy: 'Ravi', createdDate: '18 Nov 2026, 10:00 AM' }
+    ];
+    store.saveTickets(testTickets);
+
+    const newest = store.getTickets({ user: 'Ravi', role: 'Employee', sort: 'newest' });
+    assert.strictEqual(newest[0].id, 'TICK-B', 'Valid date appears first when sorting newest');
+
+    const oldest = store.getTickets({ user: 'Ravi', role: 'Employee', sort: 'oldest' });
+    assert.strictEqual(oldest[0].id, 'TICK-A', 'Fallback zero-timestamp appears first when sorting oldest');
+
+    store.resetTickets();
+  });
 });

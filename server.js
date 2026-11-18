@@ -97,6 +97,7 @@ const server = http.createServer(async (req, res) => {
       const category = parsedUrl.searchParams.get('category') || 'All';
       const priority = parsedUrl.searchParams.get('priority') || 'All';
       const status = parsedUrl.searchParams.get('status') || 'All';
+      const sort = parsedUrl.searchParams.get('sort') || 'newest';
 
       const tickets = store.getTickets({
         user: persona.name,
@@ -104,7 +105,8 @@ const server = http.createServer(async (req, res) => {
         search,
         category,
         priority,
-        status
+        status,
+        sort
       });
 
       return sendJSON(res, 200, {

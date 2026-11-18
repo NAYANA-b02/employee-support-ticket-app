@@ -14,6 +14,12 @@ const SAMPLE_TICKETS_FILE = path.join(DATA_DIR, 'sampleTickets.json');
 const CATEGORIES = ['Hardware', 'Software', 'Network', 'Access', 'Other'];
 const PRIORITIES = ['Low', 'Medium', 'High'];
 const STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed'];
+const SORT_OPTIONS = ['newest', 'oldest'];
+
+const MONTHS = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+};
 
 // Fixed 5 fictional personas for demonstration
 const USERS = [
@@ -106,10 +112,41 @@ function findUser(identifier) {
 }
 
 /**
- * Gets tickets filtered by role visibility and query parameters.
- * Rule: Employee sees only their own tickets; Support Staff see all tickets.
+ * Parses the stored createdDate string ("18 Nov 2026, 09:30 AM") into a timestamp.
+ * Returns 0 when the value cannot be parsed so sorting still completes.
  */
-function getTickets({ user = 'Ravi', role = 'Employee', search = '', category = 'All', priority = 'All', status = 'All' } = {}) {
+function parseCreatedDate(value) {
+  if (!value || typeof value !== 'string') return 0;
+  const match = value.trim().match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4}),\s+(\d{1,2}):(\d{2})\s+(AM|PM)$/i);
+  if (!match) {
+    const fallback = Date.parse(value);
+    return Number.isNaN(fallback) ? 0 : fallback;
+  }
+
+  const day = parseInt(match[1], 10);
+  const month = MONTHS[match[2].toLowerCase()];
+  const year = parseInt(match[3], 10);
+  let hours = parseInt(match[4], 10);
+  const minutes = parseInt(match[5], 10);
+  const ampm = match[6].toUpperCase();
+
+  if (month === undefined) return 0;
+  if (day < 1 || day > 31) return 0;
+  if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) return 0;
+
+  if (ampm === 'PM' && hours !== 12) hours += 12;
+  if (ampm === 'AM' && hours === 12) hours = 0;
+
+  const time = new Date(year, month, day, hours, minutes, 0, 0).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+/**
+ * Gets tickets filtered by role visibility and query parameters, then sorted by createdDate.
+ * Rule: Employee sees only their own tickets; Support Staff see all tickets.
+ * Sort: "newest" (default) or "oldest". Invalid values are rejected.
+ */
+function getTickets({ user = 'Ravi', role = 'Employee', search = '', category = 'All', priority = 'All', status = 'All', sort = 'newest' } = {}) {
   let tickets = loadTickets();
 
   // Business Rule: Employee sees only their own tickets
@@ -142,6 +179,22 @@ function getTickets({ user = 'Ravi', role = 'Employee', search = '', category = 
       t.createdBy.toLowerCase().includes(q)
     );
   }
+
+  const sortKey = String(sort == null ? '' : sort).trim().toLowerCase();
+  const normalizedSort = sortKey === '' ? 'newest' : sortKey;
+  if (!SORT_OPTIONS.includes(normalizedSort)) {
+    const err = new Error(`Sort must be one of: ${SORT_OPTIONS.join(', ')}.`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  tickets.sort((a, b) => {
+    const diff = parseCreatedDate(a.createdDate) - parseCreatedDate(b.createdDate);
+    if (diff !== 0) {
+      return normalizedSort === 'oldest' ? diff : -diff;
+    }
+    return normalizedSort === 'oldest' ? a.id.localeCompare(b.id) : b.id.localeCompare(a.id);
+  });
 
   return tickets;
 }
@@ -391,9 +444,11 @@ module.exports = {
   updateStatus,
   addComment,
   formatDate,
+  parseCreatedDate,
   CATEGORIES,
   PRIORITIES,
   STATUSES,
+  SORT_OPTIONS,
   TICKETS_FILE,
   SAMPLE_TICKETS_FILE
 };
