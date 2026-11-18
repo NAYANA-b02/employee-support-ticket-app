@@ -1,0 +1,18 @@
+{
+  "name": "employee-support-ticket-app",
+  "version": "1.0.0",
+  "description": "Employee Support Ticket Management Application (Demo Prototype)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/tickets.test.js"
+  },
+  "keywords": [
+    "ticket-management",
+    "support",
+    "helpdesk",
+    "demo"
+  ],
+  "author": "",
+  "license": "ISC"
+}

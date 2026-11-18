@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Support Ticket Hub</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">🎫</div>
+      <div>
+        <h1 class="brand-title">SupportDesk</h1>
+        <p class="brand-subtitle">Employee Support Ticket Hub</p>
+      </div>
+    </div>
+
+    <!-- Demo Role Switcher -->
+    <div class="nav-controls">
+      <div class="demo-badge-wrap">
+        <span class="demo-pill">Demonstration Only — Not Real Authentication</span>
+      </div>
+
+      <div class="persona-switcher-box">
+        <label for="personaSelect" class="persona-label">Active Persona:</label>
+        <div class="persona-select-wrap">
+          <span id="activePersonaAvatar" class="user-avatar">👨‍💻</span>
+          <select id="personaSelect" class="persona-select" title="Switch Demo Persona">
+            <!-- Dynamically populated from API -->
+          </select>
+          <span id="activePersonaRoleBadge" class="role-badge role-employee">Employee</span>
+        </div>
+      </div>
+
+      <button id="resetDemoBtn" class="btn btn-outline-danger btn-sm" title="Restore sample data">
+        🔄 Reset Demo
+      </button>
+    </div>
+  </header>
+
+  <!-- Role Context Banner -->
+  <section id="roleContextBanner" class="role-context-banner role-employee-banner">
+    <div class="banner-content">
+      <span class="banner-icon">ℹ️</span>
+      <span id="bannerText">Loading persona perspective...</span>
+    </div>
+  </section>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- KPI Metric Counters -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Tickets</div>
+        <div id="kpiTotal" class="kpi-value">0</div>
+        <div class="kpi-sub">in current view</div>
+      </div>
+      <div class="kpi-card kpi-open">
+        <div class="kpi-label">Open</div>
+        <div id="kpiOpen" class="kpi-value text-blue">0</div>
+        <div class="kpi-sub">awaiting triage</div>
+      </div>
+      <div class="kpi-card kpi-progress">
+        <div class="kpi-label">In Progress</div>
+        <div id="kpiProgress" class="kpi-value text-amber">0</div>
+        <div class="kpi-sub">being investigated</div>
+      </div>
+      <div class="kpi-card kpi-resolved">
+        <div class="kpi-label">Resolved</div>
+        <div id="kpiResolved" class="kpi-value text-green">0</div>
+        <div class="kpi-sub">fix verified</div>
+      </div>
+      <div class="kpi-card kpi-closed">
+        <div class="kpi-label">Closed</div>
+        <div id="kpiClosed" class="kpi-value text-slate">0</div>
+        <div class="kpi-sub">completed requests</div>
+      </div>
+    </section>
+
+    <!-- Action & Filter Bar -->
+    <section class="filter-card">
+      <div class="filter-top">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by title, description, ticket ID, or creator...">
+          <button id="clearSearchBtn" class="clear-search-btn" style="display:none;" title="Clear search">✕</button>
+        </div>
+
+        <button id="openNewTicketBtn" class="btn btn-primary">
+          <span class="btn-icon">➕</span> New Support Ticket
+        </button>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="categoryFilter" class="filter-label">Category:</label>
+          <select id="categoryFilter" class="filter-select">
+            <option value="All">All Categories</option>
+            <option value="Hardware">Hardware</option>
+            <option value="Software">Software</option>
+            <option value="Network">Network</option>
+            <option value="Access">Access</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="priorityFilter" class="filter-label">Priority:</label>
+          <select id="priorityFilter" class="filter-select">
+            <option value="All">All Priorities</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="statusFilter" class="filter-label">Status:</label>
+          <select id="statusFilter" class="filter-select">
+            <option value="All">All Statuses</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+
+        <div class="filter-group filter-actions">
+          <button id="resetFiltersBtn" class="btn btn-ghost btn-sm">Clear Filters</button>
+          <span id="ticketCountLabel" class="results-count">Showing 0 tickets</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ticket Table Container -->
+    <section class="ticket-list-section">
+      <div class="table-card">
+        <table class="ticket-table">
+          <thead>
+            <tr>
+              <th style="width: 110px;">Ticket ID</th>
+              <th>Title & Details</th>
+              <th style="width: 120px;">Category</th>
+              <th style="width: 110px;">Priority</th>
+              <th style="width: 130px;">Status</th>
+              <th style="width: 130px;">Created By</th>
+              <th style="width: 170px;">Dates</th>
+              <th style="width: 90px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="ticketsTableBody">
+            <!-- Dynamically populated from API -->
+          </tbody>
+        </table>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">📭</div>
+          <h3 class="empty-title">No Tickets Found</h3>
+          <p id="emptyMessage" class="empty-desc">There are no tickets matching your current role or filter criteria.</p>
+          <button id="emptyActionBtn" class="btn btn-outline-primary btn-sm" style="margin-top: 12px;">Create Ticket</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 1: Create Ticket Modal                                   -->
+  <!-- ============================================================== -->
+  <div id="newTicketModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">➕</span>
+          <h2 class="modal-title">Create Support Ticket</h2>
+        </div>
+        <button id="closeNewTicketBtn" class="modal-close-btn" title="Close">✕</button>
+      </div>
+
+      <form id="newTicketForm" class="modal-body">
+        <div class="form-notice">
+          Submitting as: <strong id="newTicketCreatorLabel">Ravi</strong> (status will be initialized to <strong>Open</strong>)
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <div class="form-label-row">
+            <label for="ticketTitleInput" class="form-label">Ticket Title <span class="required">*</span></label>
+            <span id="titleCharCount" class="char-counter">0/100</span>
+          </div>
+          <input type="text" id="ticketTitleInput" class="form-input" placeholder="e.g. Laptop not charging" maxlength="100" required>
+          <span id="titleError" class="field-error" style="display: none;"></span>
+        </div>
+
+        <!-- Category & Priority Row -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="ticketCategorySelect" class="form-label">Category <span class="required">*</span></label>
+            <select id="ticketCategorySelect" class="form-select" required>
+              <option value="Hardware">Hardware</option>
+              <option value="Software">Software</option>
+              <option value="Network">Network</option>
+              <option value="Access">Access</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="ticketPrioritySelect" class="form-label">Priority <span class="required">*</span></label>
+            <select id="ticketPrioritySelect" class="form-select" required>
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="ticketDescInput" class="form-label">Description <span class="required">*</span></label>
+          <textarea id="ticketDescInput" class="form-textarea" rows="4" placeholder="Describe the technical issue, steps to reproduce, and any error codes..." required></textarea>
+          <span id="descError" class="field-error" style="display: none;"></span>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button type="button" id="cancelNewTicketBtn" class="btn btn-ghost">Cancel</button>
+          <button type="submit" id="submitTicketBtn" class="btn btn-primary">Submit Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2: Ticket Details & Edit Modal                           -->
+  <!-- ============================================================== -->
+  <div id="detailModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span id="detailTicketIdBadge" class="ticket-id-tag">TICK-101</span>
+          <h2 id="detailTitleText" class="modal-title">Ticket Details</h2>
+        </div>
+        <button id="closeDetailBtn" class="modal-close-btn" title="Close">✕</button>
+      </div>
+
+      <div class="modal-body detail-modal-body">
+
+        <!-- Visual Status Stepper -->
+        <div class="stepper-card">
+          <div class="stepper-label">Ticket Progress:</div>
+          <div class="stepper-track">
+            <div id="stepOpen" class="step-item step-active">
+              <div class="step-circle">1</div>
+              <div class="step-title">Open</div>
+            </div>
+            <div class="step-line" id="line1"></div>
+            <div id="stepProgress" class="step-item">
+              <div class="step-circle">2</div>
+              <div class="step-title">In Progress</div>
+            </div>
+            <div class="step-line" id="line2"></div>
+            <div id="stepResolved" class="step-item">
+              <div class="step-circle">3</div>
+              <div class="step-title">Resolved</div>
+            </div>
+            <div class="step-line" id="line3"></div>
+            <div id="stepClosed" class="step-item">
+              <div class="step-circle">4</div>
+              <div class="step-title">Closed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Closed Immutability Alert -->
+        <div id="closedAlertBanner" class="alert-banner alert-closed" style="display: none;">
+          <span class="alert-icon">🔒</span>
+          <div>
+            <strong>This ticket is Closed.</strong> The request details are locked and cannot be edited. Comments can still be added below.
+          </div>
+        </div>
+
+        <!-- Details Grid / View Mode -->
+        <div id="viewModeContainer" class="detail-content-box">
+          <div class="detail-header-actions">
+            <div class="badge-cluster">
+              <span id="detailCategoryBadge" class="category-badge">Hardware</span>
+              <span id="detailPriorityBadge" class="priority-badge priority-high">High Priority</span>
+              <span id="detailStatusBadge" class="status-badge status-open">Open</span>
+            </div>
+
+            <!-- Edit Button (Only visible if Employee is Creator & ticket not closed) -->
+            <button id="startEditBtn" class="btn btn-outline-primary btn-sm" style="display: none;">
+              ✏️ Edit Request
+            </button>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Created By</span>
+              <span id="detailCreatedBy" class="meta-val">Ravi</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Created Date</span>
+              <span id="detailCreatedDate" class="meta-val">18 Nov 2026, 09:30 AM</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Last Updated Date</span>
+              <span id="detailLastUpdatedDate" class="meta-val">18 Nov 2026, 09:30 AM</span>
+            </div>
+          </div>
+
+          <div class="detail-desc-box">
+            <h4 class="section-subtitle">Description</h4>
+            <p id="detailDescText" class="desc-text">Ticket description here...</p>
+          </div>
+        </div>
+
+        <!-- Edit Mode Container (Hidden by default) -->
+        <form id="editModeContainer" class="detail-edit-form" style="display: none;">
+          <div class="edit-form-notice">
+            ✏️ <strong>Editing Request:</strong> You can update the details below. Click Save when finished.
+          </div>
+
+          <div class="form-group">
+            <div class="form-label-row">
+              <label for="editTitleInput" class="form-label">Title <span class="required">*</span></label>
+              <span id="editTitleCharCount" class="char-counter">0/100</span>
+            </div>
+            <input type="text" id="editTitleInput" class="form-input" maxlength="100" required>
+            <span id="editTitleError" class="field-error" style="display:none;"></span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="editCategorySelect" class="form-label">Category</label>
+              <select id="editCategorySelect" class="form-select">
+                <option value="Hardware">Hardware</option>
+                <option value="Software">Software</option>
+                <option value="Network">Network</option>
+                <option value="Access">Access</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="editPrioritySelect" class="form-label">Priority</label>
+              <select id="editPrioritySelect" class="form-select">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editDescInput" class="form-label">Description <span class="required">*</span></label>
+            <textarea id="editDescInput" class="form-textarea" rows="4" required></textarea>
+            <span id="editDescError" class="field-error" style="display:none;"></span>
+          </div>
+
+          <div class="edit-actions">
+            <button type="button" id="cancelEditBtn" class="btn btn-ghost btn-sm">Cancel</button>
+            <button type="submit" id="saveEditBtn" class="btn btn-primary btn-sm">Save Changes</button>
+          </div>
+        </form>
+
+        <!-- Status Management Section (Support Staff Only) -->
+        <div class="status-manage-section">
+          <h4 class="section-subtitle">Status Management</h4>
+          
+          <!-- Visible to Support Staff -->
+          <div id="supportStatusControls" class="status-controls-row" style="display: none;">
+            <span class="status-control-label">Change Status:</span>
+            <div class="status-btn-group">
+              <button type="button" class="btn-status-pill" data-status="Open">Open</button>
+              <button type="button" class="btn-status-pill" data-status="In Progress">In Progress</button>
+              <button type="button" class="btn-status-pill" data-status="Resolved">Resolved</button>
+              <button type="button" class="btn-status-pill" data-status="Closed">Closed</button>
+            </div>
+          </div>
+
+          <!-- Visible to Employees -->
+          <div id="employeeStatusNotice" class="employee-status-notice">
+            🔒 <em>Only support staff can change a ticket's status.</em>
+          </div>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Comments & Activity Feed -->
+        <div class="comments-section">
+          <div class="comments-header">
+            <h4 class="section-subtitle">Discussion & Comments</h4>
+            <span id="commentCountBadge" class="comment-count-badge">0 comments</span>
+          </div>
+
+          <!-- Comment List -->
+          <div id="commentsList" class="comments-list">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Add Comment Form -->
+          <form id="addCommentForm" class="add-comment-box">
+            <div class="add-comment-header">
+              <span>Posting as: <strong id="commentAuthorLabel">Ravi</strong></span>
+              <span class="shortcut-tip">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to submit</span>
+            </div>
+            <textarea id="commentTextInput" class="form-textarea comment-textarea" rows="2" placeholder="Write a comment or resolution note..." required></textarea>
+            <div class="add-comment-footer">
+              <button type="submit" id="submitCommentBtn" class="btn btn-primary btn-sm">
+                💬 Send Comment
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL 3: Reset Confirmation Modal                              -->
+  <!-- ============================================================== -->
+  <div id="resetModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <h3 class="modal-title">Reset Sample Data?</h3>
+        <button id="closeResetModalBtn" class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>This will restore the <strong>5 original sample tickets</strong> defined in SPEC.md and discard any temporary changes made during the demo.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelResetBtn" class="btn btn-ghost">Cancel</button>
+        <button id="confirmResetBtn" class="btn btn-danger">Yes, Reset Demo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
